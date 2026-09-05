@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1B2E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="التقويم">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<title>التقويم | Calendar</title>
+<style>
+  :root{
+    --bg: #0F1B2E;
+    --bg-2: #0B1524;
+    --surface: #16273F;
+    --surface-line: rgba(233, 226, 210, 0.09);
+    --gold: #D9A94E;
+    --gold-soft: #E8C888;
+    --text: #F1ECDF;
+    --text-dim: #93A4BE;
+    --sheet-bg: #12213A;
+    --radius: 20px;
+    --ok: #6FAE7F;
+    --err: #C97C6B;
+    --season-winter: #2E4C74; --season-winter-soft: #A9C2E0;
+    --season-spring: #35624B; --season-spring-soft: #A9CDB4;
+    --season-summer: #8A5A24; --season-summer-soft: #E7C186;
+    --season-autumn: #6E3D2A; --season-autumn-soft: #D9A583;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body{ margin:0; padding:0; height:100%;
+    background: radial-gradient(120% 140% at 50% -10%, var(--bg-2) 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: "Cairo","Segoe UI","Tahoma","Geneva",-apple-system,BlinkMacSystemFont,sans-serif;
+    overscroll-behavior-y: contain;
+  }
+  body{ min-height:100vh; display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  header{ padding: 30px 22px 6px; text-align:center; }
+  .eyebrow{ font-family:"Georgia","Times New Roman",serif; letter-spacing:.12em; font-size:13px; color:var(--gold-soft); opacity:.85; margin:0 0 6px; }
+  h1{ margin:0; font-size:32px; font-weight:800; }
+  h1 .en{ display:block; font-family:"Georgia","Times New Roman",serif; font-style:italic; font-weight:400; font-size:15px; color:var(--text-dim); margin-top:4px; letter-spacing:.04em; }
+  .today-line{ margin: 12px 0 0; font-size: 13.5px; color: var(--gold-soft); background: rgba(217,169,78,.1); display:inline-block; padding: 7px 16px; border-radius: 20px; border: 1px solid rgba(217,169,78,.25); }
+
+  main{ flex:1; padding: 18px 16px 40px; }
+  .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; max-width:520px; margin:0 auto; }
+
+  .card{ position:relative; background:var(--surface); border:1px solid var(--surface-line); border-radius:var(--radius);
+    padding:18px 16px 16px; text-align:right; overflow:hidden; cursor:pointer; isolation:isolate;
+    opacity:0; transform:translateY(14px); animation: rise .55s cubic-bezier(.2,.7,.2,1) forwards;
+    transition: transform .18s ease; }
+  .card:active{ transform:scale(.97); }
+  .card.current{ border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .card::before{ content:""; position:absolute; inset:0; z-index:-1; opacity:.55;
+    background: radial-gradient(120px 90px at 100% 0%, var(--tint) 0%, transparent 70%); }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+
+  .card .num{ font-family:"Georgia","Times New Roman",serif; font-size:13px; color:var(--tint-soft); opacity:.9; }
+  .card .ar-name{ display:block; font-size:21px; font-weight:800; margin:6px 0 2px; }
+  .card .en-name{ display:block; font-family:"Georgia","Times New Roman",serif; font-style:italic; font-size:13px; color:var(--text-dim); letter-spacing:.02em; }
+  .card .icon{ position:absolute; left:12px; top:12px; width:22px; height:22px; color:var(--tint-soft); opacity:.8; }
+  .card .badge{ position:absolute; left:12px; bottom:12px; font-size:10px; background:var(--gold); color:#201404; font-weight:800; padding:3px 8px; border-radius:20px; }
+
+  footer{ text-align:center; padding:6px 16px 28px; font-size:11px; color:var(--text-dim); opacity:.6; }
+
+  /* ---------- sheet ---------- */
+  .scrim{ position:fixed; inset:0; background:rgba(6,10,18,.6); backdrop-filter:blur(2px);
+    opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:10; }
+  .scrim.show{ opacity:1; pointer-events:auto; }
+
+  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:11; background:var(--sheet-bg);
+    border-radius:26px 26px 0 0; border-top:1px solid var(--surface-line);
+    padding:14px 22px calc(26px + env(safe-area-inset-bottom));
+    transform:translateY(105%); transition:transform .32s cubic-bezier(.2,.8,.2,1);
+    max-width:520px; margin:0 auto; box-shadow:0 -20px 60px rgba(0,0,0,.4);
+    max-height: 86vh; overflow-y:auto; }
+  .sheet.show{ transform:translateY(0); }
+  .grabber{ width:40px; height:4px; border-radius:4px; background:var(--surface-line); margin:4px auto 16px; position:sticky; top:0; }
+
+  .top-row{ display:flex; align-items:center; justify-content:space-between; }
+  .season-icon{ width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:var(--tint); color:var(--tint-soft); flex-shrink:0; }
+  .season-icon svg{ width:20px; height:20px; }
+
+  .ordinal{ font-size:12px; color:var(--gold-soft); margin:16px 0 3px; }
+  .ar-title{ font-size:27px; font-weight:800; margin:0 0 3px; }
+  .en-title{ font-family:"Georgia","Times New Roman",serif; font-style:italic; font-size:14.5px; color:var(--text-dim); margin-bottom:16px; }
+
+  .section-label{ font-size:12.5px; color:var(--text-dim); margin: 18px 2px 8px; }
+
+  .day-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:7px; }
+  .day-chip{ aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:10px; background:var(--surface); border:1px solid var(--surface-line);
+    font-size:13px; font-weight:700; color:var(--text-dim); cursor:pointer;
+    font-family:"Georgia","Times New Roman",serif; transition: background .15s, color .15s, transform .1s; }
+  .day-chip:active{ transform:scale(.9); }
+  .day-chip.today{ border-color:var(--gold); color:var(--gold-soft); }
+  .day-chip.active{ background:var(--gold); color:#201404; border-color:var(--gold); }
+
+  .events-box{ margin-top:16px; }
+  .events-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  .events-head .title{ font-size:14.5px; font-weight:800; }
+  .events-head .sub{ font-size:11.5px; color:var(--text-dim); }
+
+  .event-item{ display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--surface-line); }
+  .event-item .yr{ flex-shrink:0; min-width:52px; font-family:"Georgia","Times New Roman",serif; font-weight:800; color:var(--gold-soft); font-size:14px; }
+  .event-item .tx{ font-size:13.5px; line-height:1.6; color:var(--text); }
+  .event-item .tag{ font-size:9.5px; color:var(--text-dim); border:1px solid var(--surface-line); border-radius:6px; padding:0 4px; margin-inline-end:5px; }
+
+  .state-msg{ font-size:13px; color:var(--text-dim); text-align:center; padding:18px 8px; }
+  .state-msg.err{ color:var(--err); }
+  .spinner{ width:22px; height:22px; border-radius:50%; border:2.5px solid var(--surface-line); border-top-color:var(--gold); margin:6px auto 10px; animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .skel{ height:13px; border-radius:6px; background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,.05) 37%, var(--surface) 63%);
+    background-size:400% 100%; animation:shimmer 1.4s ease infinite; margin:9px 0; }
+  @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:0 0;} }
+
+  .close-btn{ margin-top:22px; width:100%; padding:14px; border-radius:14px; border:none;
+    background:var(--gold); color:#201404; font-family:inherit; font-weight:800; font-size:15px; cursor:pointer; }
+  .close-btn:active{ opacity:.85; }
+
+  .stat-row{ display:flex; gap:10px; margin-top:14px; }
+  .stat{ flex:1; background:var(--surface); border:1px solid var(--surface-line); border-radius:14px; padding:11px 8px; text-align:center; }
+  .stat .v{ font-size:17px; font-weight:800; } .stat .l{ font-size:10.5px; color:var(--text-dim); margin-top:3px; }
+
+  @media (prefers-reduced-motion: reduce){ .card,.sheet,.scrim{ animation:none !important; transition:none !important; } .card{opacity:1; transform:none;} }
+  @media (min-width:420px){ .grid{ grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">CALENDAR</p>
+  <h1>التقويم<span class="en">The Twelve Months</span></h1>
+  <div class="today-line" id="todayLine"></div>
+</header>
+
+<main><div class="grid" id="grid"></div></main>
+<footer>اضغط على أي شهر لعرض أيامه وأحداثه التاريخية</footer>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grabber"></div>
+  <div class="top-row">
+    <div class="season-icon" id="sheetIcon"></div>
+    <div style="font-size:13px;color:var(--text-dim)" id="sheetSeason"></div>
+  </div>
+  <p class="ordinal" id="sheetOrdinal"></p>
+  <h2 class="ar-title" id="sheetAr"></h2>
+  <p class="en-title" id="sheetEn"></p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="v" id="sheetNum"></div><div class="l">ترتيب الشهر</div></div>
+    <div class="stat"><div class="v" id="sheetDays"></div><div class="l">عدد الأيام</div></div>
+  </div>
+
+  <p class="section-label">اختر يومًا</p>
+  <div class="day-grid" id="dayGrid"></div>
+
+  <div class="events-box">
+    <div class="events-head">
+      <span class="title" id="eventsTitle">أحداث في مثل هذا اليوم</span>
+      <span class="sub">ويكيبيديا</span>
+    </div>
+    <div id="eventsList"></div>
+  </div>
+
+  <button class="close-btn" id="closeBtn">إغلاق</button>
+</div>
+
+<script>
+  const months = [
+    { num:1,  en:"January",   ar:"يناير",     ord:"الشهر الأول",        season:"winter" },
+    { num:2,  en:"February",  ar:"فبراير",     ord:"الشهر الثاني",       season:"winter" },
+    { num:3,  en:"March",     ar:"مارس",       ord:"الشهر الثالث",       season:"spring" },
+    { num:4,  en:"April",     ar:"أبريل",      ord:"الشهر الرابع",       season:"spring" },
+    { num:5,  en:"May",       ar:"مايو",       ord:"الشهر الخامس",       season:"spring" },
+    { num:6,  en:"June",      ar:"يونيو",      ord:"الشهر السادس",       season:"summer" },
+    { num:7,  en:"July",      ar:"يوليو",      ord:"الشهر السابع",       season:"summer" },
+    { num:8,  en:"August",    ar:"أغسطس",      ord:"الشهر الثامن",       season:"summer" },
+    { num:9,  en:"September", ar:"سبتمبر",     ord:"الشهر التاسع",       season:"autumn" },
+    { num:10, en:"October",   ar:"أكتوبر",     ord:"الشهر العاشر",       season:"autumn" },
+    { num:11, en:"November",  ar:"نوفمبر",     ord:"الشهر الحادي عشر",   season:"autumn" },
+    { num:12, en:"December",  ar:"ديسمبر",     ord:"الشهر الثاني عشر",   season:"winter" },
+  ];
+
+  const seasonMeta = {
+    winter: { ar:"الشتاء", tint:"var(--season-winter)", soft:"var(--season-winter-soft)" },
+    spring: { ar:"الربيع", tint:"var(--season-spring)", soft:"var(--season-spring-soft)" },
+    summer: { ar:"الصيف",  tint:"var(--season-summer)", soft:"var(--season-summer-soft)" },
+    autumn: { ar:"الخريف", tint:"var(--season-autumn)", soft:"var(--season-autumn-soft)" },
+  };
+
+  const icons = {
+    winter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2v20M4.5 6l15 12M19.5 6l-15 12"/><path d="M12 5l-2 2M12 5l2 2M12 19l-2-2M12 19l2-2M6 8l0 2.4M6 8l2 .6M18 16l0-2.4M18 16l-2-.6M18 8l0 2.4M18 8l-2 .6M6 16l0-2.4M6 16l2-.6"/></svg>`,
+    spring: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-3.5-2.5-6-6-6 0 3.5 2.5 6 6 6Z"/></svg>`,
+    summer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.6 5.4l-2.1 2.1M7.5 16.5l-2.1 2.1M18.6 18.6l-2.1-2.1M7.5 7.5 5.4 5.4"/></svg>`,
+    autumn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7c1 4-1 8-5 11-4-3-6-7-5-11 2 1.5 3.5 1.5 5 0 1.5 1.5 3 1.5 5 0Z"/><path d="M12 18v3"/></svg>`,
+  };
+
+  const now = new Date();
+  const CUR_YEAR = now.getFullYear();
+  const CUR_MONTH = now.getMonth() + 1;
+  const CUR_DAY = now.getDate();
+
+  document.getElementById("todayLine").textContent =
+    "اليوم: " + now.toLocaleDateString("ar-u-nu-latn", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+
+  function daysInMonth(monthNum){
+    return new Date(CUR_YEAR, monthNum, 0).getDate();
+  }
+
+  // ---------- render month grid ----------
+  const grid = document.getElementById("grid");
+  months.forEach((m, i) => {
+    const sm = seasonMeta[m.season];
+    const isCurrent = m.num === CUR_MONTH;
+    const card = document.createElement("div");
+    card.className = "card" + (isCurrent ? " current" : "");
+    card.style.setProperty("--tint", sm.tint);
+    card.style.setProperty("--tint-soft", sm.soft);
+    card.style.animationDelay = (i * 0.045) + "s";
+    card.innerHTML = `
+      <div class="icon">${icons[m.season]}</div>
+      <span class="num">${String(m.num).padStart(2,"0")}</span>
+      <span class="ar-name">${m.ar}</span>
+      <span class="en-name">${m.en}</span>
+      ${isCurrent ? '<span class="badge">الشهر الحالي</span>' : ''}
+    `;
+    card.addEventListener("click", () => openSheet(m));
+    grid.appendChild(card);
+  });
+
+  // ---------- sheet ----------
+  const scrim = document.getElementById("scrim");
+  const sheet = document.getElementById("sheet");
+  const eventsCache = {};
+  let activeMonth = null;
+
+  function openSheet(m){
+    activeMonth = m;
+    const sm = seasonMeta[m.season];
+    sheet.style.setProperty("--tint", sm.tint);
+    sheet.style.setProperty("--tint-soft", sm.soft);
+    document.getElementById("sheetIcon").innerHTML = icons[m.season];
+    document.getElementById("sheetSeason").textContent = "فصل " + sm.ar;
+    document.getElementById("sheetOrdinal").textContent = m.ord;
+    document.getElementById("sheetAr").textContent = m.ar;
+    document.getElementById("sheetEn").textContent = m.en + " — " + m.ord;
+    document.getElementById("sheetNum").textContent = m.num;
+    const dim = daysInMonth(m.num);
+    document.getElementById("sheetDays").textContent = dim;
+
+    buildDayGrid(m, dim);
+
+    const defaultDay = (m.num === CUR_MONTH) ? CUR_DAY : 1;
+    selectDay(m, defaultDay);
+
+    scrim.classList.add("show");
+    sheet.classList.add("show");
+    sheet.scrollTop = 0;
+  }
+
+  function buildDayGrid(m, dim){
+    const dayGrid = document.getElementById("dayGrid");
+    dayGrid.innerHTML = "";
+    for(let d = 1; d <= dim; d++){
+      const chip = document.createElement("div");
+      chip.className = "day-chip" + ((m.num===CUR_MONTH && d===CUR_DAY) ? " today" : "");
+      chip.dataset.day = d;
+      chip.textContent = d;
+      chip.addEventListener("click", () => selectDay(m, d));
+      dayGrid.appendChild(chip);
+    }
+  }
+
+  function selectDay(m, d){
+    document.querySelectorAll(".day-chip").forEach(c => {
+      c.classList.toggle("active", Number(c.dataset.day) === d);
+    });
+    document.getElementById("eventsTitle").textContent =
+      `أحداث في ${d} ${m.en} عبر التاريخ`;
+    loadEvents(m.num, d);
+  }
+
+  async function loadEvents(month, day){
+    const mm = String(month).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
+    const key = mm + "-" + dd;
+    const list = document.getElementById("eventsList");
+
+    if(eventsCache[key]){
+      renderEvents(eventsCache[key]);
+      return;
+    }
+
+    list.innerHTML = `
+      <div class="skel" style="width:92%"></div>
+      <div class="skel" style="width:75%"></div>
+      <div class="skel" style="width:85%"></div>
+    `;
+
+    try{
+      let events = await fetchOnThisDay("ar", mm, dd);
+      if(events.length === 0){
+        events = await fetchOnThisDay("en", mm, dd);
+        events.forEach(e => e.en = true);
+      }
+      events.sort((a,b) => b.year - a.year);
+      eventsCache[key] = events;
+      renderEvents(events);
+    }catch(err){
+      list.innerHTML = `<p class="state-msg err">تعذّر تحميل الأحداث. تحقق من اتصالك بالإنترنت وحاول مجددًا.</p>`;
+    }
+  }
+
+  async function fetchOnThisDay(lang, mm, dd){
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`;
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    if(!res.ok) throw new Error("network");
+    const data = await res.json();
+    return (data.events || []).slice(0, 30).map(e => ({ year: e.year, text: e.text }));
+  }
+
+  function renderEvents(events){
+    const list = document.getElementById("eventsList");
+    if(!events || events.length === 0){
+      list.innerHTML = `<p class="state-msg">لا توجد أحداث مسجّلة لهذا اليوم حاليًا.</p>`;
+      return;
+    }
+    list.innerHTML = events.slice(0, 12).map(e => `
+      <div class="event-item">
+        <div class="yr">${e.year}</div>
+        <div class="tx">${e.en ? '<span class="tag">EN</span>' : ''}${escapeHtml(e.text)}</div>
+      </div>
+    `).join("");
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function closeSheet(){
+    scrim.classList.remove("show");
+    sheet.classList.remove("show");
+  }
+  scrim.addEventListener("click", closeSheet);
+  document.getElementById("closeBtn").addEventListener("click", closeSheet);
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
