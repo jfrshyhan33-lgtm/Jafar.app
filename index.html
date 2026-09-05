@@ -44,11 +44,17 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  header{ padding: 30px 22px 6px; text-align:center; }
+  header{ padding: 30px 22px 6px; text-align:center; position:relative; }
   .eyebrow{ font-family:"Georgia","Times New Roman",serif; letter-spacing:.12em; font-size:13px; color:var(--gold-soft); opacity:.85; margin:0 0 6px; }
   h1{ margin:0; font-size:32px; font-weight:800; }
   h1 .en{ display:block; font-family:"Georgia","Times New Roman",serif; font-style:italic; font-weight:400; font-size:15px; color:var(--text-dim); margin-top:4px; letter-spacing:.04em; }
   .today-line{ margin: 12px 0 0; font-size: 13.5px; color: var(--gold-soft); background: rgba(217,169,78,.1); display:inline-block; padding: 7px 16px; border-radius: 20px; border: 1px solid rgba(217,169,78,.25); }
+
+  .theme-btn{ position:absolute; top:26px; left:20px; width:38px; height:38px; border-radius:12px;
+    background: var(--surface); border:1px solid var(--surface-line); color:var(--gold-soft);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .theme-btn svg{ width:19px; height:19px; }
+  .theme-btn:active{ transform:scale(.92); }
 
   main{ flex:1; padding: 18px 16px 40px; }
   .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; max-width:520px; margin:0 auto; }
@@ -96,13 +102,16 @@
   .section-label{ font-size:12.5px; color:var(--text-dim); margin: 18px 2px 8px; }
 
   .day-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:7px; }
-  .day-chip{ aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  .day-chip{ aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
     border-radius:10px; background:var(--surface); border:1px solid var(--surface-line);
-    font-size:13px; font-weight:700; color:var(--text-dim); cursor:pointer;
-    font-family:"Georgia","Times New Roman",serif; transition: background .15s, color .15s, transform .1s; }
+    color:var(--text-dim); cursor:pointer;
+    transition: background .15s, color .15s, transform .1s; }
   .day-chip:active{ transform:scale(.9); }
+  .day-chip .wd{ font-size:9px; font-weight:700; opacity:.75; font-family:"Cairo","Segoe UI",sans-serif; }
+  .day-chip .dn{ font-size:14px; font-weight:800; font-family:"Georgia","Times New Roman",serif; }
   .day-chip.today{ border-color:var(--gold); color:var(--gold-soft); }
   .day-chip.active{ background:var(--gold); color:#201404; border-color:var(--gold); }
+  .day-chip.active .wd{ opacity:.85; }
 
   .events-box{ margin-top:16px; }
   .events-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
@@ -123,6 +132,18 @@
     background-size:400% 100%; animation:shimmer 1.4s ease infinite; margin:9px 0; }
   @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:0 0;} }
 
+  .theme-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:6px; }
+  .theme-card{ background:var(--surface); border:1.5px solid var(--surface-line); border-radius:16px;
+    padding:14px 8px 12px; text-align:center; cursor:pointer; transition: border-color .15s, transform .1s; }
+  .theme-card:active{ transform:scale(.95); }
+  .theme-card.active{ border-color:var(--gold); }
+  .swatch{ width:38px; height:38px; border-radius:50%; margin:0 auto 8px; position:relative;
+    box-shadow: inset 0 0 0 3px rgba(0,0,0,.15); }
+  .swatch::after{ content:""; position:absolute; inset:9px; border-radius:50%; }
+  .theme-card .tname{ font-size:11.5px; font-weight:700; color:var(--text); }
+  .theme-card .check{ display:none; font-size:10px; color:var(--gold-soft); margin-top:3px; }
+  .theme-card.active .check{ display:block; }
+
   .close-btn{ margin-top:22px; width:100%; padding:14px; border-radius:14px; border:none;
     background:var(--gold); color:#201404; font-family:inherit; font-weight:800; font-size:15px; cursor:pointer; }
   .close-btn:active{ opacity:.85; }
@@ -138,6 +159,15 @@
 <body>
 
 <header>
+  <button class="theme-btn" id="themeBtn" aria-label="تغيير الثيم">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.2"/>
+      <circle cx="9" cy="9.3" r="1.15" fill="currentColor" stroke="none"/>
+      <circle cx="14.5" cy="8.5" r="1.15" fill="currentColor" stroke="none"/>
+      <circle cx="16" cy="13" r="1.15" fill="currentColor" stroke="none"/>
+      <circle cx="10.5" cy="15.5" r="1.15" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
   <p class="eyebrow">CALENDAR</p>
   <h1>التقويم<span class="en">The Twelve Months</span></h1>
   <div class="today-line" id="todayLine"></div>
@@ -176,6 +206,16 @@
   <button class="close-btn" id="closeBtn">إغلاق</button>
 </div>
 
+<div class="scrim" id="themeScrim"></div>
+<div class="sheet" id="themeSheet">
+  <div class="grabber"></div>
+  <p class="ordinal" style="margin-top:2px;">المظهر</p>
+  <h2 class="ar-title" style="font-size:22px;">اختر ثيمًا</h2>
+  <p class="en-title" style="margin-bottom:14px;">Choose a color theme</p>
+  <div class="theme-grid" id="themeGrid"></div>
+  <button class="close-btn" id="closeThemeBtn">إغلاق</button>
+</div>
+
 <script>
   const months = [
     { num:1,  en:"January",   ar:"يناير",     ord:"الشهر الأول",        season:"winter" },
@@ -205,6 +245,9 @@
     summer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.6 5.4l-2.1 2.1M7.5 16.5l-2.1 2.1M18.6 18.6l-2.1-2.1M7.5 7.5 5.4 5.4"/></svg>`,
     autumn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7c1 4-1 8-5 11-4-3-6-7-5-11 2 1.5 3.5 1.5 5 0 1.5 1.5 3 1.5 5 0Z"/><path d="M12 18v3"/></svg>`,
   };
+
+  const weekdaysAr = ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+  const weekdaysArFull = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
   const now = new Date();
   const CUR_YEAR = now.getFullYear();
@@ -272,11 +315,13 @@
   function buildDayGrid(m, dim){
     const dayGrid = document.getElementById("dayGrid");
     dayGrid.innerHTML = "";
+
     for(let d = 1; d <= dim; d++){
+      const dow = new Date(CUR_YEAR, m.num - 1, d).getDay(); // 0=Sun..6=Sat
       const chip = document.createElement("div");
       chip.className = "day-chip" + ((m.num===CUR_MONTH && d===CUR_DAY) ? " today" : "");
       chip.dataset.day = d;
-      chip.textContent = d;
+      chip.innerHTML = `<span class="wd">${weekdaysAr[dow]}</span><span class="dn">${d}</span>`;
       chip.addEventListener("click", () => selectDay(m, d));
       dayGrid.appendChild(chip);
     }
@@ -286,8 +331,9 @@
     document.querySelectorAll(".day-chip").forEach(c => {
       c.classList.toggle("active", Number(c.dataset.day) === d);
     });
+    const weekdayName = weekdaysArFull[new Date(CUR_YEAR, m.num - 1, d).getDay()];
     document.getElementById("eventsTitle").textContent =
-      `أحداث في ${d} ${m.en} عبر التاريخ`;
+      `أحداث يوم ${weekdayName} ${d} ${m.en}`;
     loadEvents(m.num, d);
   }
 
@@ -356,6 +402,71 @@
   }
   scrim.addEventListener("click", closeSheet);
   document.getElementById("closeBtn").addEventListener("click", closeSheet);
+
+  // ---------- themes ----------
+  const themes = [
+    { id:"night",    name:"ليلي ذهبي",   vars:{ bg:"#0F1B2E", bg2:"#0B1524", surface:"#16273F", line:"rgba(233,226,210,.09)", gold:"#D9A94E", goldSoft:"#E8C888", text:"#F1ECDF", textDim:"#93A4BE", sheetBg:"#12213A" } },
+    { id:"amber",    name:"كهرماني",     vars:{ bg:"#2B1B0E", bg2:"#20140A", surface:"#3A2716", line:"rgba(245,222,179,.10)", gold:"#E8A33D", goldSoft:"#F3C374", text:"#F5E9D6", textDim:"#B99B75", sheetBg:"#32210F" } },
+    { id:"emerald",  name:"زمردي",       vars:{ bg:"#0B211B", bg2:"#081813", surface:"#123329", line:"rgba(200,240,220,.09)", gold:"#4FCB8B", goldSoft:"#8FE0B6", text:"#E7F5EE", textDim:"#7FAA97", sheetBg:"#0F281F" } },
+    { id:"burgundy", name:"عنابي",       vars:{ bg:"#26131C", bg2:"#1B0D14", surface:"#391A26", line:"rgba(246,220,230,.09)", gold:"#E67E9A", goldSoft:"#F2ABBE", text:"#F6E7EC", textDim:"#B98A99", sheetBg:"#2F1620" } },
+    { id:"ocean",    name:"محيطي",       vars:{ bg:"#0A1F2B", bg2:"#071620", surface:"#123342", line:"rgba(210,240,245,.09)", gold:"#4FB8C9", goldSoft:"#8CD6E1", text:"#E7F3F5", textDim:"#7CA6B1", sheetBg:"#0E2836" } },
+    { id:"violet",   name:"بنفسجي",      vars:{ bg:"#191129", bg2:"#120C1E", surface:"#281B3D", line:"rgba(230,220,245,.09)", gold:"#A780E8", goldSoft:"#C9AFF2", text:"#EDE6F5", textDim:"#9C8FB5", sheetBg:"#20152F" } },
+  ];
+
+  function applyTheme(theme, save){
+    const r = document.documentElement.style;
+    r.setProperty("--bg", theme.vars.bg);
+    r.setProperty("--bg-2", theme.vars.bg2);
+    r.setProperty("--surface", theme.vars.surface);
+    r.setProperty("--surface-line", theme.vars.line);
+    r.setProperty("--gold", theme.vars.gold);
+    r.setProperty("--gold-soft", theme.vars.goldSoft);
+    r.setProperty("--text", theme.vars.text);
+    r.setProperty("--text-dim", theme.vars.textDim);
+    r.setProperty("--sheet-bg", theme.vars.sheetBg);
+    document.querySelectorAll(".theme-card").forEach(c => c.classList.toggle("active", c.dataset.id === theme.id));
+    if (save) { try{ localStorage.setItem("calendar-theme", theme.id); }catch(e){} }
+  }
+
+  function buildThemeGrid(activeId){
+    const grid = document.getElementById("themeGrid");
+    grid.innerHTML = "";
+    themes.forEach(t => {
+      const card = document.createElement("div");
+      card.className = "theme-card" + (t.id === activeId ? " active" : "");
+      card.dataset.id = t.id;
+      card.innerHTML = `
+        <div class="swatch" style="background:${t.vars.bg}; box-shadow: inset 0 0 0 3px ${t.vars.gold}66;">
+          <span style="position:absolute; inset:9px; border-radius:50%; background:${t.vars.gold};"></span>
+        </div>
+        <div class="tname">${t.name}</div>
+        <div class="check">✓ مُفعّل</div>
+      `;
+      card.addEventListener("click", () => applyTheme(t, true));
+      grid.appendChild(card);
+    });
+  }
+
+  let savedThemeId = "night";
+  try{ savedThemeId = localStorage.getItem("calendar-theme") || "night"; }catch(e){}
+  const savedTheme = themes.find(t => t.id === savedThemeId) || themes[0];
+  buildThemeGrid(savedTheme.id);
+  applyTheme(savedTheme, false);
+
+  const themeBtn = document.getElementById("themeBtn");
+  const themeScrim = document.getElementById("themeScrim");
+  const themeSheet = document.getElementById("themeSheet");
+  function openThemeSheet(){
+    themeScrim.classList.add("show");
+    themeSheet.classList.add("show");
+  }
+  function closeThemeSheet(){
+    themeScrim.classList.remove("show");
+    themeSheet.classList.remove("show");
+  }
+  themeBtn.addEventListener("click", openThemeSheet);
+  themeScrim.addEventListener("click", closeThemeSheet);
+  document.getElementById("closeThemeBtn").addEventListener("click", closeThemeSheet);
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
