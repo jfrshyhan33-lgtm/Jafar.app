@@ -1,478 +1,172 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0F1B2E">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="التقويم">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" href="./icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F1B2E"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="التقويم">
 <title>التقويم | Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Noto+Serif:ital@1&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg: #0F1B2E;
-    --bg-2: #0B1524;
-    --surface: #16273F;
-    --surface-line: rgba(233, 226, 210, 0.09);
-    --gold: #D9A94E;
-    --gold-soft: #E8C888;
-    --text: #F1ECDF;
-    --text-dim: #93A4BE;
-    --sheet-bg: #12213A;
-    --radius: 20px;
-    --ok: #6FAE7F;
-    --err: #C97C6B;
-    --season-winter: #2E4C74; --season-winter-soft: #A9C2E0;
-    --season-spring: #35624B; --season-spring-soft: #A9CDB4;
-    --season-summer: #8A5A24; --season-summer-soft: #E7C186;
-    --season-autumn: #6E3D2A; --season-autumn-soft: #D9A583;
-  }
-
-  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-  html, body{ margin:0; padding:0; height:100%;
-    background: radial-gradient(120% 140% at 50% -10%, var(--bg-2) 0%, var(--bg) 55%);
-    color: var(--text);
-    font-family: "Cairo","Segoe UI","Tahoma","Geneva",-apple-system,BlinkMacSystemFont,sans-serif;
-    overscroll-behavior-y: contain;
-  }
-  body{ min-height:100vh; display:flex; flex-direction:column;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
-
-  header{ padding: 30px 22px 6px; text-align:center; position:relative; }
-  .eyebrow{ font-family:"Georgia","Times New Roman",serif; letter-spacing:.12em; font-size:13px; color:var(--gold-soft); opacity:.85; margin:0 0 6px; }
-  h1{ margin:0; font-size:32px; font-weight:800; }
-  h1 .en{ display:block; font-family:"Georgia","Times New Roman",serif; font-style:italic; font-weight:400; font-size:15px; color:var(--text-dim); margin-top:4px; letter-spacing:.04em; }
-  .today-line{ margin: 12px 0 0; font-size: 13.5px; color: var(--gold-soft); background: rgba(217,169,78,.1); display:inline-block; padding: 7px 16px; border-radius: 20px; border: 1px solid rgba(217,169,78,.25); }
-
-  .theme-btn{ position:absolute; top:26px; left:20px; width:38px; height:38px; border-radius:12px;
-    background: var(--surface); border:1px solid var(--surface-line); color:var(--gold-soft);
-    display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
-  .theme-btn svg{ width:19px; height:19px; }
-  .theme-btn:active{ transform:scale(.92); }
-
-  main{ flex:1; padding: 18px 16px 40px; }
-  .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:14px; max-width:520px; margin:0 auto; }
-
-  .card{ position:relative; background:var(--surface); border:1px solid var(--surface-line); border-radius:var(--radius);
-    padding:18px 16px 16px; text-align:right; overflow:hidden; cursor:pointer; isolation:isolate;
-    opacity:0; transform:translateY(14px); animation: rise .55s cubic-bezier(.2,.7,.2,1) forwards;
-    transition: transform .18s ease; }
-  .card:active{ transform:scale(.97); }
-  .card.current{ border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
-  .card::before{ content:""; position:absolute; inset:0; z-index:-1; opacity:.55;
-    background: radial-gradient(120px 90px at 100% 0%, var(--tint) 0%, transparent 70%); }
-  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
-
-  .card .num{ font-family:"Georgia","Times New Roman",serif; font-size:13px; color:var(--tint-soft); opacity:.9; }
-  .card .ar-name{ display:block; font-size:21px; font-weight:800; margin:6px 0 2px; }
-  .card .en-name{ display:block; font-family:"Georgia","Times New Roman",serif; font-style:italic; font-size:13px; color:var(--text-dim); letter-spacing:.02em; }
-  .card .icon{ position:absolute; left:12px; top:12px; width:22px; height:22px; color:var(--tint-soft); opacity:.8; }
-  .card .badge{ position:absolute; left:12px; bottom:12px; font-size:10px; background:var(--gold); color:#201404; font-weight:800; padding:3px 8px; border-radius:20px; }
-
-  footer{ text-align:center; padding:6px 16px 28px; font-size:11px; color:var(--text-dim); opacity:.6; }
-
-  /* ---------- sheet ---------- */
-  .scrim{ position:fixed; inset:0; background:rgba(6,10,18,.6); backdrop-filter:blur(2px);
-    opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:10; }
-  .scrim.show{ opacity:1; pointer-events:auto; }
-
-  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:11; background:var(--sheet-bg);
-    border-radius:26px 26px 0 0; border-top:1px solid var(--surface-line);
-    padding:14px 22px calc(26px + env(safe-area-inset-bottom));
-    transform:translateY(105%); transition:transform .32s cubic-bezier(.2,.8,.2,1);
-    max-width:520px; margin:0 auto; box-shadow:0 -20px 60px rgba(0,0,0,.4);
-    max-height: 86vh; overflow-y:auto; }
-  .sheet.show{ transform:translateY(0); }
-  .grabber{ width:40px; height:4px; border-radius:4px; background:var(--surface-line); margin:4px auto 16px; position:sticky; top:0; }
-
-  .top-row{ display:flex; align-items:center; justify-content:space-between; }
-  .season-icon{ width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:var(--tint); color:var(--tint-soft); flex-shrink:0; }
-  .season-icon svg{ width:20px; height:20px; }
-
-  .ordinal{ font-size:12px; color:var(--gold-soft); margin:16px 0 3px; }
-  .ar-title{ font-size:27px; font-weight:800; margin:0 0 3px; }
-  .en-title{ font-family:"Georgia","Times New Roman",serif; font-style:italic; font-size:14.5px; color:var(--text-dim); margin-bottom:16px; }
-
-  .section-label{ font-size:12.5px; color:var(--text-dim); margin: 18px 2px 8px; }
-
-  .day-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:7px; }
-  .day-chip{ aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    border-radius:10px; background:var(--surface); border:1px solid var(--surface-line);
-    color:var(--text-dim); cursor:pointer;
-    transition: background .15s, color .15s, transform .1s; }
-  .day-chip:active{ transform:scale(.9); }
-  .day-chip .wd{ font-size:9px; font-weight:700; opacity:.75; font-family:"Cairo","Segoe UI",sans-serif; }
-  .day-chip .dn{ font-size:14px; font-weight:800; font-family:"Georgia","Times New Roman",serif; }
-  .day-chip.today{ border-color:var(--gold); color:var(--gold-soft); }
-  .day-chip.active{ background:var(--gold); color:#201404; border-color:var(--gold); }
-  .day-chip.active .wd{ opacity:.85; }
-
-  .events-box{ margin-top:16px; }
-  .events-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
-  .events-head .title{ font-size:14.5px; font-weight:800; }
-  .events-head .sub{ font-size:11.5px; color:var(--text-dim); }
-
-  .event-item{ display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--surface-line); }
-  .event-item .yr{ flex-shrink:0; min-width:52px; font-family:"Georgia","Times New Roman",serif; font-weight:800; color:var(--gold-soft); font-size:14px; }
-  .event-item .tx{ font-size:13.5px; line-height:1.6; color:var(--text); }
-  .event-item .tag{ font-size:9.5px; color:var(--text-dim); border:1px solid var(--surface-line); border-radius:6px; padding:0 4px; margin-inline-end:5px; }
-
-  .state-msg{ font-size:13px; color:var(--text-dim); text-align:center; padding:18px 8px; }
-  .state-msg.err{ color:var(--err); }
-  .spinner{ width:22px; height:22px; border-radius:50%; border:2.5px solid var(--surface-line); border-top-color:var(--gold); margin:6px auto 10px; animation:spin .8s linear infinite; }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-
-  .skel{ height:13px; border-radius:6px; background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,.05) 37%, var(--surface) 63%);
-    background-size:400% 100%; animation:shimmer 1.4s ease infinite; margin:9px 0; }
-  @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:0 0;} }
-
-  .theme-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:6px; }
-  .theme-card{ background:var(--surface); border:1.5px solid var(--surface-line); border-radius:16px;
-    padding:14px 8px 12px; text-align:center; cursor:pointer; transition: border-color .15s, transform .1s; }
-  .theme-card:active{ transform:scale(.95); }
-  .theme-card.active{ border-color:var(--gold); }
-  .swatch{ width:38px; height:38px; border-radius:50%; margin:0 auto 8px; position:relative;
-    box-shadow: inset 0 0 0 3px rgba(0,0,0,.15); }
-  .swatch::after{ content:""; position:absolute; inset:9px; border-radius:50%; }
-  .theme-card .tname{ font-size:11.5px; font-weight:700; color:var(--text); }
-  .theme-card .check{ display:none; font-size:10px; color:var(--gold-soft); margin-top:3px; }
-  .theme-card.active .check{ display:block; }
-
-  .close-btn{ margin-top:22px; width:100%; padding:14px; border-radius:14px; border:none;
-    background:var(--gold); color:#201404; font-family:inherit; font-weight:800; font-size:15px; cursor:pointer; }
-  .close-btn:active{ opacity:.85; }
-
-  .stat-row{ display:flex; gap:10px; margin-top:14px; }
-  .stat{ flex:1; background:var(--surface); border:1px solid var(--surface-line); border-radius:14px; padding:11px 8px; text-align:center; }
-  .stat .v{ font-size:17px; font-weight:800; } .stat .l{ font-size:10.5px; color:var(--text-dim); margin-top:3px; }
-
-  @media (prefers-reduced-motion: reduce){ .card,.sheet,.scrim{ animation:none !important; transition:none !important; } .card{opacity:1; transform:none;} }
-  @media (min-width:420px){ .grid{ grid-template-columns: repeat(3, 1fr); } }
-</style>
-</head>
-<body>
-
-<header>
-  <button class="theme-btn" id="themeBtn" aria-label="تغيير الثيم">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="8.2"/>
-      <circle cx="9" cy="9.3" r="1.15" fill="currentColor" stroke="none"/>
-      <circle cx="14.5" cy="8.5" r="1.15" fill="currentColor" stroke="none"/>
-      <circle cx="16" cy="13" r="1.15" fill="currentColor" stroke="none"/>
-      <circle cx="10.5" cy="15.5" r="1.15" fill="currentColor" stroke="none"/>
-    </svg>
-  </button>
-  <p class="eyebrow">CALENDAR</p>
-  <h1>التقويم<span class="en">The Twelve Months</span></h1>
-  <div class="today-line" id="todayLine"></div>
-</header>
-
-<main><div class="grid" id="grid"></div></main>
-<footer>اضغط على أي شهر لعرض أيامه وأحداثه التاريخية</footer>
-
-<div class="scrim" id="scrim"></div>
-<div class="sheet" id="sheet">
-  <div class="grabber"></div>
-  <div class="top-row">
-    <div class="season-icon" id="sheetIcon"></div>
-    <div style="font-size:13px;color:var(--text-dim)" id="sheetSeason"></div>
-  </div>
-  <p class="ordinal" id="sheetOrdinal"></p>
-  <h2 class="ar-title" id="sheetAr"></h2>
-  <p class="en-title" id="sheetEn"></p>
-
-  <div class="stat-row">
-    <div class="stat"><div class="v" id="sheetNum"></div><div class="l">ترتيب الشهر</div></div>
-    <div class="stat"><div class="v" id="sheetDays"></div><div class="l">عدد الأيام</div></div>
-  </div>
-
-  <p class="section-label">اختر يومًا</p>
-  <div class="day-grid" id="dayGrid"></div>
-
-  <div class="events-box">
-    <div class="events-head">
-      <span class="title" id="eventsTitle">أحداث في مثل هذا اليوم</span>
-      <span class="sub">ويكيبيديا</span>
-    </div>
-    <div id="eventsList"></div>
-  </div>
-
-  <button class="close-btn" id="closeBtn">إغلاق</button>
-</div>
-
-<div class="scrim" id="themeScrim"></div>
-<div class="sheet" id="themeSheet">
-  <div class="grabber"></div>
-  <p class="ordinal" style="margin-top:2px;">المظهر</p>
-  <h2 class="ar-title" style="font-size:22px;">اختر ثيمًا</h2>
-  <p class="en-title" style="margin-bottom:14px;">Choose a color theme</p>
-  <div class="theme-grid" id="themeGrid"></div>
-  <button class="close-btn" id="closeThemeBtn">إغلاق</button>
-</div>
-
+:root{--bg:#0C1A2A;--bg2:#0D2B36;--card:#14303F;--tx:#EAF6FA;--mu:#7F9DAE;--ac:#57B6CB}
+[data-t=green]{--bg:#0B2A22;--bg2:#0E3A2E;--card:#12392F;--ac:#E5C158}
+[data-t=plum]{--bg:#241432;--bg2:#33194A;--card:#341E48;--ac:#F0B8D8}
+[data-t=light]{--bg:#F4F1EA;--bg2:#E8E2D6;--card:#fff;--tx:#1C2433;--mu:#6B7688;--ac:#9A7B1C}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(180deg,var(--bg),var(--bg2)) fixed;color:var(--tx);font:15px Tajawal,system-ui,sans-serif;min-height:100vh;padding:env(safe-area-inset-top) 14px 30px}
+h1{font-size:32px}.mu{color:var(--mu)}p{margin:6px 0}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+button,input,select,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid #8883;border-radius:12px;padding:9px 12px}
+button{cursor:pointer;transition:transform .12s,opacity .12s;touch-action:manipulation}button:active,.mc:active,.d:active,.ev:active{transform:scale(.95);opacity:.8}.pri{background:var(--ac);color:#111;border:0;font-weight:700}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr)}
+.mc{position:relative;text-align:right;padding:14px 16px;border-radius:26px;background:radial-gradient(circle at 85% 0%,color-mix(in srgb,var(--tn) 32%,transparent),transparent 62%),var(--card);border:1.5px solid #ffffff14;min-height:118px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:transform .12s;touch-action:manipulation}
+.mc.cur{border-color:var(--ac);box-shadow:0 0 0 3px #57b6cb33}
+.tp{display:flex;justify-content:space-between;align-items:center;position:absolute;top:14px;left:16px;right:16px}
+.nu{font:16px 'Noto Serif',Georgia,serif}.ic{width:26px;height:26px;fill:none;stroke:var(--tn);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mc b{font-size:26px;line-height:1.25;margin-top:38px}.iq{font-size:13px;color:var(--ac)}
+.mc em,.se{font:italic 15px 'Noto Serif',Georgia,serif;color:var(--mu)}
+.bd{align-self:flex-start;margin-top:6px;background:var(--ac);color:#06202a;border-radius:20px;padding:2px 12px;font-size:13px;font-weight:700}
+.pill{display:inline-block;margin:14px 0 6px;padding:8px 20px;border-radius:30px;border:1px solid #d4af3755;background:#d4af3714;color:var(--ac);cursor:pointer}
+.th{position:absolute;left:0;top:0;width:46px;height:46px;border-radius:14px;padding:0;font-size:20px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.wd{text-align:center;font-size:12px;color:var(--mu)}
+.d{min-height:58px;background:var(--card);border-radius:10px;padding:4px 2px;text-align:center;cursor:pointer}
+.d i{display:block;font-style:normal;font-size:10px;color:var(--mu)}.d.t{outline:2px solid var(--ac)}
+.dots{display:flex;gap:2px;justify-content:center;margin-top:3px}.dots b{width:6px;height:6px;border-radius:50%}
+#sh{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;z-index:9}
+#sh>div{background:var(--bg);width:100%;max-height:88vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px}
+.ev{background:var(--card);border-radius:14px;padding:12px;margin:10px 0;border-right:5px solid;cursor:pointer}
+.grid,.days,h1,h2{animation:fd .28s ease}#sh>div{animation:up .28s ease}html{scroll-behavior:smooth}@keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.f input,.f select,.f textarea{width:100%;margin:4px 0}
+</style></head><body>
+<div id="app"></div><div id="sh" onclick="cl()"></div>
 <script>
-  const months = [
-    { num:1,  en:"January",   ar:"يناير",     ord:"الشهر الأول",        season:"winter" },
-    { num:2,  en:"February",  ar:"فبراير",     ord:"الشهر الثاني",       season:"winter" },
-    { num:3,  en:"March",     ar:"مارس",       ord:"الشهر الثالث",       season:"spring" },
-    { num:4,  en:"April",     ar:"أبريل",      ord:"الشهر الرابع",       season:"spring" },
-    { num:5,  en:"May",       ar:"مايو",       ord:"الشهر الخامس",       season:"spring" },
-    { num:6,  en:"June",      ar:"يونيو",      ord:"الشهر السادس",       season:"summer" },
-    { num:7,  en:"July",      ar:"يوليو",      ord:"الشهر السابع",       season:"summer" },
-    { num:8,  en:"August",    ar:"أغسطس",      ord:"الشهر الثامن",       season:"summer" },
-    { num:9,  en:"September", ar:"سبتمبر",     ord:"الشهر التاسع",       season:"autumn" },
-    { num:10, en:"October",   ar:"أكتوبر",     ord:"الشهر العاشر",       season:"autumn" },
-    { num:11, en:"November",  ar:"نوفمبر",     ord:"الشهر الحادي عشر",   season:"autumn" },
-    { num:12, en:"December",  ar:"ديسمبر",     ord:"الشهر الثاني عشر",   season:"winter" },
-  ];
-
-  const seasonMeta = {
-    winter: { ar:"الشتاء", tint:"var(--season-winter)", soft:"var(--season-winter-soft)" },
-    spring: { ar:"الربيع", tint:"var(--season-spring)", soft:"var(--season-spring-soft)" },
-    summer: { ar:"الصيف",  tint:"var(--season-summer)", soft:"var(--season-summer-soft)" },
-    autumn: { ar:"الخريف", tint:"var(--season-autumn)", soft:"var(--season-autumn-soft)" },
-  };
-
-  const icons = {
-    winter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2v20M4.5 6l15 12M19.5 6l-15 12"/><path d="M12 5l-2 2M12 5l2 2M12 19l-2-2M12 19l2-2M6 8l0 2.4M6 8l2 .6M18 16l0-2.4M18 16l-2-.6M18 8l0 2.4M18 8l-2 .6M6 16l0-2.4M6 16l2-.6"/></svg>`,
-    spring: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 15c0-3.5-2.5-6-6-6 0 3.5 2.5 6 6 6Z"/></svg>`,
-    summer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.6 5.4l-2.1 2.1M7.5 16.5l-2.1 2.1M18.6 18.6l-2.1-2.1M7.5 7.5 5.4 5.4"/></svg>`,
-    autumn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7c1 4-1 8-5 11-4-3-6-7-5-11 2 1.5 3.5 1.5 5 0 1.5 1.5 3 1.5 5 0Z"/><path d="M12 18v3"/></svg>`,
-  };
-
-  const weekdaysAr = ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
-  const weekdaysArFull = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-
-  const now = new Date();
-  const CUR_YEAR = now.getFullYear();
-  const CUR_MONTH = now.getMonth() + 1;
-  const CUR_DAY = now.getDate();
-
-  document.getElementById("todayLine").textContent =
-    "اليوم: " + now.toLocaleDateString("ar-u-nu-latn", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
-
-  function daysInMonth(monthNum){
-    return new Date(CUR_YEAR, monthNum, 0).getDate();
-  }
-
-  // ---------- render month grid ----------
-  const grid = document.getElementById("grid");
-  months.forEach((m, i) => {
-    const sm = seasonMeta[m.season];
-    const isCurrent = m.num === CUR_MONTH;
-    const card = document.createElement("div");
-    card.className = "card" + (isCurrent ? " current" : "");
-    card.style.setProperty("--tint", sm.tint);
-    card.style.setProperty("--tint-soft", sm.soft);
-    card.style.animationDelay = (i * 0.045) + "s";
-    card.innerHTML = `
-      <div class="icon">${icons[m.season]}</div>
-      <span class="num">${String(m.num).padStart(2,"0")}</span>
-      <span class="ar-name">${m.ar}</span>
-      <span class="en-name">${m.en}</span>
-      ${isCurrent ? '<span class="badge">الشهر الحالي</span>' : ''}
-    `;
-    card.addEventListener("click", () => openSheet(m));
-    grid.appendChild(card);
-  });
-
-  // ---------- sheet ----------
-  const scrim = document.getElementById("scrim");
-  const sheet = document.getElementById("sheet");
-  const eventsCache = {};
-  let activeMonth = null;
-
-  function openSheet(m){
-    activeMonth = m;
-    const sm = seasonMeta[m.season];
-    sheet.style.setProperty("--tint", sm.tint);
-    sheet.style.setProperty("--tint-soft", sm.soft);
-    document.getElementById("sheetIcon").innerHTML = icons[m.season];
-    document.getElementById("sheetSeason").textContent = "فصل " + sm.ar;
-    document.getElementById("sheetOrdinal").textContent = m.ord;
-    document.getElementById("sheetAr").textContent = m.ar;
-    document.getElementById("sheetEn").textContent = m.en + " — " + m.ord;
-    document.getElementById("sheetNum").textContent = m.num;
-    const dim = daysInMonth(m.num);
-    document.getElementById("sheetDays").textContent = dim;
-
-    buildDayGrid(m, dim);
-
-    const defaultDay = (m.num === CUR_MONTH) ? CUR_DAY : 1;
-    selectDay(m, defaultDay);
-
-    scrim.classList.add("show");
-    sheet.classList.add("show");
-    sheet.scrollTop = 0;
-  }
-
-  function buildDayGrid(m, dim){
-    const dayGrid = document.getElementById("dayGrid");
-    dayGrid.innerHTML = "";
-
-    for(let d = 1; d <= dim; d++){
-      const dow = new Date(CUR_YEAR, m.num - 1, d).getDay(); // 0=Sun..6=Sat
-      const chip = document.createElement("div");
-      chip.className = "day-chip" + ((m.num===CUR_MONTH && d===CUR_DAY) ? " today" : "");
-      chip.dataset.day = d;
-      chip.innerHTML = `<span class="wd">${weekdaysAr[dow]}</span><span class="dn">${d}</span>`;
-      chip.addEventListener("click", () => selectDay(m, d));
-      dayGrid.appendChild(chip);
-    }
-  }
-
-  function selectDay(m, d){
-    document.querySelectorAll(".day-chip").forEach(c => {
-      c.classList.toggle("active", Number(c.dataset.day) === d);
-    });
-    const weekdayName = weekdaysArFull[new Date(CUR_YEAR, m.num - 1, d).getDay()];
-    document.getElementById("eventsTitle").textContent =
-      `أحداث يوم ${weekdayName} ${d} ${m.en}`;
-    loadEvents(m.num, d);
-  }
-
-  async function loadEvents(month, day){
-    const mm = String(month).padStart(2, "0");
-    const dd = String(day).padStart(2, "0");
-    const key = mm + "-" + dd;
-    const list = document.getElementById("eventsList");
-
-    if(eventsCache[key]){
-      renderEvents(eventsCache[key]);
-      return;
-    }
-
-    list.innerHTML = `
-      <div class="skel" style="width:92%"></div>
-      <div class="skel" style="width:75%"></div>
-      <div class="skel" style="width:85%"></div>
-    `;
-
-    try{
-      let events = await fetchOnThisDay("ar", mm, dd);
-      if(events.length === 0){
-        events = await fetchOnThisDay("en", mm, dd);
-        events.forEach(e => e.en = true);
-      }
-      events.sort((a,b) => b.year - a.year);
-      eventsCache[key] = events;
-      renderEvents(events);
-    }catch(err){
-      list.innerHTML = `<p class="state-msg err">تعذّر تحميل الأحداث. تحقق من اتصالك بالإنترنت وحاول مجددًا.</p>`;
-    }
-  }
-
-  async function fetchOnThisDay(lang, mm, dd){
-    const url = `https://${lang}.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`;
-    const res = await fetch(url, { headers: { "Accept": "application/json" } });
-    if(!res.ok) throw new Error("network");
-    const data = await res.json();
-    return (data.events || []).slice(0, 30).map(e => ({ year: e.year, text: e.text }));
-  }
-
-  function renderEvents(events){
-    const list = document.getElementById("eventsList");
-    if(!events || events.length === 0){
-      list.innerHTML = `<p class="state-msg">لا توجد أحداث مسجّلة لهذا اليوم حاليًا.</p>`;
-      return;
-    }
-    list.innerHTML = events.slice(0, 12).map(e => `
-      <div class="event-item">
-        <div class="yr">${e.year}</div>
-        <div class="tx">${e.en ? '<span class="tag">EN</span>' : ''}${escapeHtml(e.text)}</div>
-      </div>
-    `).join("");
-  }
-
-  function escapeHtml(s){
-    const d = document.createElement("div");
-    d.textContent = s;
-    return d.innerHTML;
-  }
-
-  function closeSheet(){
-    scrim.classList.remove("show");
-    sheet.classList.remove("show");
-  }
-  scrim.addEventListener("click", closeSheet);
-  document.getElementById("closeBtn").addEventListener("click", closeSheet);
-
-  // ---------- themes ----------
-  const themes = [
-    { id:"night",    name:"ليلي ذهبي",   vars:{ bg:"#0F1B2E", bg2:"#0B1524", surface:"#16273F", line:"rgba(233,226,210,.09)", gold:"#D9A94E", goldSoft:"#E8C888", text:"#F1ECDF", textDim:"#93A4BE", sheetBg:"#12213A" } },
-    { id:"amber",    name:"كهرماني",     vars:{ bg:"#2B1B0E", bg2:"#20140A", surface:"#3A2716", line:"rgba(245,222,179,.10)", gold:"#E8A33D", goldSoft:"#F3C374", text:"#F5E9D6", textDim:"#B99B75", sheetBg:"#32210F" } },
-    { id:"emerald",  name:"زمردي",       vars:{ bg:"#0B211B", bg2:"#081813", surface:"#123329", line:"rgba(200,240,220,.09)", gold:"#4FCB8B", goldSoft:"#8FE0B6", text:"#E7F5EE", textDim:"#7FAA97", sheetBg:"#0F281F" } },
-    { id:"burgundy", name:"عنابي",       vars:{ bg:"#26131C", bg2:"#1B0D14", surface:"#391A26", line:"rgba(246,220,230,.09)", gold:"#E67E9A", goldSoft:"#F2ABBE", text:"#F6E7EC", textDim:"#B98A99", sheetBg:"#2F1620" } },
-    { id:"ocean",    name:"محيطي",       vars:{ bg:"#0A1F2B", bg2:"#071620", surface:"#123342", line:"rgba(210,240,245,.09)", gold:"#4FB8C9", goldSoft:"#8CD6E1", text:"#E7F3F5", textDim:"#7CA6B1", sheetBg:"#0E2836" } },
-    { id:"violet",   name:"بنفسجي",      vars:{ bg:"#191129", bg2:"#120C1E", surface:"#281B3D", line:"rgba(230,220,245,.09)", gold:"#A780E8", goldSoft:"#C9AFF2", text:"#EDE6F5", textDim:"#9C8FB5", sheetBg:"#20152F" } },
-  ];
-
-  function applyTheme(theme, save){
-    const r = document.documentElement.style;
-    r.setProperty("--bg", theme.vars.bg);
-    r.setProperty("--bg-2", theme.vars.bg2);
-    r.setProperty("--surface", theme.vars.surface);
-    r.setProperty("--surface-line", theme.vars.line);
-    r.setProperty("--gold", theme.vars.gold);
-    r.setProperty("--gold-soft", theme.vars.goldSoft);
-    r.setProperty("--text", theme.vars.text);
-    r.setProperty("--text-dim", theme.vars.textDim);
-    r.setProperty("--sheet-bg", theme.vars.sheetBg);
-    document.querySelectorAll(".theme-card").forEach(c => c.classList.toggle("active", c.dataset.id === theme.id));
-    if (save) { try{ localStorage.setItem("calendar-theme", theme.id); }catch(e){} }
-  }
-
-  function buildThemeGrid(activeId){
-    const grid = document.getElementById("themeGrid");
-    grid.innerHTML = "";
-    themes.forEach(t => {
-      const card = document.createElement("div");
-      card.className = "theme-card" + (t.id === activeId ? " active" : "");
-      card.dataset.id = t.id;
-      card.innerHTML = `
-        <div class="swatch" style="background:${t.vars.bg}; box-shadow: inset 0 0 0 3px ${t.vars.gold}66;">
-          <span style="position:absolute; inset:9px; border-radius:50%; background:${t.vars.gold};"></span>
-        </div>
-        <div class="tname">${t.name}</div>
-        <div class="check">✓ مُفعّل</div>
-      `;
-      card.addEventListener("click", () => applyTheme(t, true));
-      grid.appendChild(card);
-    });
-  }
-
-  let savedThemeId = "night";
-  try{ savedThemeId = localStorage.getItem("calendar-theme") || "night"; }catch(e){}
-  const savedTheme = themes.find(t => t.id === savedThemeId) || themes[0];
-  buildThemeGrid(savedTheme.id);
-  applyTheme(savedTheme, false);
-
-  const themeBtn = document.getElementById("themeBtn");
-  const themeScrim = document.getElementById("themeScrim");
-  const themeSheet = document.getElementById("themeSheet");
-  function openThemeSheet(){
-    themeScrim.classList.add("show");
-    themeSheet.classList.add("show");
-  }
-  function closeThemeSheet(){
-    themeScrim.classList.remove("show");
-    themeSheet.classList.remove("show");
-  }
-  themeBtn.addEventListener("click", openThemeSheet);
-  themeScrim.addEventListener("click", closeThemeSheet);
-  document.getElementById("closeThemeBtn").addEventListener("click", closeThemeSheet);
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
-    });
-  }
-</script>
-</body>
-</html>
+const MN=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+const HN=['محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+const WD=['السبت','الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
+const TY={d:['شهادة / وفاة','#E5484D'],b:['ولادة','#30A46C'],e:['عيد ومناسبة مفرحة','#E5B93C'],s:['علماء وفقهاء','#3E8EF7'],h:['حدث ديني / تاريخي','#9B6BE0'],g:['عطلة رسمية','#2CB5A8']};
+const SR={A:'الإرشاد – المفيد',B:'مصباح المتهجد – الطوسي',C:'إقبال الأعمال – ابن طاووس',D:'مفاتيح الجنان – القمي',F:'بحار الأنوار – المجلسي',G:'منتهى الآمال – القمي',H:'أعيان الشيعة – الأمين'};
+// شهر|يوم|نوع|المناسبة|الشخصية|شرح|السنة|مصدر|اختلاف الروايات
+const RAW=`1|1|e|رأس السنة الهجرية|—|مطلع العام الهجري|—|G|
+1|2|h|دخول الإمام الحسين (ع) كربلاء|الإمام الحسين (ع)|نزل بكربلاء مع أهل بيته|61 هـ|A|
+1|6|s|وفاة الشريف الرضي|الشريف الرضي|جامع نهج البلاغة|406 هـ|H|
+1|9|h|تاسوعاء|العباس بن علي (ع)|يوم زحف جيش عمر بن سعد على معسكر الحسين|61 هـ|A|
+1|10|d|عاشوراء – استشهاد الإمام الحسين (ع)|الإمام الحسين (ع)|استشهد مع أهل بيته وأصحابه في كربلاء|61 هـ|A|
+1|21|s|وفاة العلامة الحلي|العلامة الحلي|فقيه أصولي كبير|726 هـ|H|
+1|22|s|وفاة الشيخ الطوسي|شيخ الطائفة|مؤسس الحوزة العلمية في النجف|460 هـ|H|
+1|25|d|استشهاد الإمام السجاد (ع)|الإمام زين العابدين (ع)|استشهد بالمدينة مسموماً|95 هـ|A|قيل 12 محرم
+2|7|b|ولادة الإمام الكاظم (ع)|الإمام موسى بن جعفر (ع)|ولد بالأبواء|128 هـ|A|
+2|8|s|وفاة السيد أبو القاسم الخوئي|السيد الخوئي|مرجع الطائفة في النجف|1413 هـ|H|
+2|20|h|الأربعين الحسيني|الإمام الحسين (ع)|أربعينية الحسين وزيارة الأربعين|61 هـ|B|
+2|28|d|وفاة النبي (ص) واستشهاد الإمام الحسن (ع)|النبي محمد (ص) / الإمام الحسن المجتبى (ع)|رحيل النبي، واستشهاد الحسن مسموماً بالمدينة|11 هـ / 50 هـ|AB|الحسن: قيل 7 صفر
+2|30|d|استشهاد الإمام الرضا (ع)|الإمام علي بن موسى الرضا (ع)|استشهد بطوس مسموماً|203 هـ|A|قيل 17 أو 23 صفر
+3|1|h|ليلة المبيت|الإمام علي (ع)|بات على فراش النبي (ص) ليلة الهجرة|1 هـ|A|
+3|8|d|استشهاد الإمام العسكري (ع)|الإمام الحسن العسكري (ع)|استشهد بسامراء مسموماً|260 هـ|A|
+3|9|e|بدء إمامة الإمام المهدي (عج)|الإمام المهدي (عج)|بدء إمامته بعد أبيه العسكري (ع)|260 هـ|D|
+3|17|b|المولد النبوي وولادة الإمام الصادق (ع)|النبي محمد (ص) / الإمام جعفر الصادق (ع)|ولد النبي عام الفيل، والصادق بالمدينة|53 ق.هـ / 83 هـ|A|عند السنة ولادة النبي 12 ربيع الأول
+3|25|s|وفاة السيد المرتضى|علم الهدى المرتضى|أحد أعلام الإمامية ببغداد|436 هـ|H|
+4|8|b|ولادة الإمام العسكري (ع)|الإمام الحسن العسكري (ع)|ولد بالمدينة|232 هـ|A|
+4|10|d|وفاة السيدة فاطمة المعصومة (ع)|السيدة المعصومة (ع)|توفيت في قم|201 هـ|D|قيل 12 ربيع الثاني
+5|5|b|ولادة السيدة زينب (ع)|السيدة زينب (ع)|ولدت بالمدينة|5 أو 6 هـ|D|اختلف في السنة واليوم
+5|9|s|استشهاد الشهيد الأول|محمد بن مكي العاملي|صاحب اللمعة الدمشقية|786 هـ|H|
+5|13|d|شهادة السيدة الزهراء (ع) – رواية 75 يوماً|السيدة فاطمة الزهراء (ع)|رواية الـ75 يوماً بعد النبي (ص)|11 هـ|D|الرواية الأخرى 3 جمادى الآخرة
+5|15|h|معركة الجمل|الإمام علي (ع)|قتال الناكثين قرب البصرة|36 هـ|A|قيل 10 جمادى الأولى
+6|3|d|شهادة السيدة الزهراء (ع) – رواية 95 يوماً|السيدة فاطمة الزهراء (ع)|الرواية المشهورة عند كثير من الإمامية|11 هـ|D|الرواية الأخرى 13 جمادى الأولى
+6|18|s|وفاة الشيخ مرتضى الأنصاري|الشيخ الأنصاري|صاحب الرسائل والمكاسب|1281 هـ|H|
+6|20|b|ولادة السيدة الزهراء (ع)|السيدة فاطمة الزهراء (ع)|ولدت بمكة بعد البعثة بخمس سنين|5 ق.هـ|D|قيل غير ذلك
+7|1|b|ولادة الإمام الباقر (ع)|الإمام محمد الباقر (ع)|ولد بالمدينة|57 هـ|A|
+7|3|d|استشهاد الإمام الهادي (ع)|الإمام علي الهادي (ع)|استشهد بسامراء مسموماً|254 هـ|A|
+7|10|b|ولادة الإمام الجواد (ع)|الإمام محمد الجواد (ع)|ولد بالمدينة|195 هـ|A|
+7|13|b|ولادة الإمام علي (ع)|الإمام علي بن أبي طالب (ع)|ولد في جوف الكعبة|30 ق.هـ|A|
+7|15|d|وفاة السيدة زينب (ع)|السيدة زينب (ع)|توفيت بالشام|62 هـ|D|قيل غير ذلك
+7|25|d|استشهاد الإمام الكاظم (ع)|الإمام موسى الكاظم (ع)|استشهد في سجن بغداد|183 هـ|A|
+7|27|h|المبعث النبوي الشريف|النبي محمد (ص)|بعثة النبي بالرسالة|13 ق.هـ|B|
+7|27|h|الإسراء والمعراج|النبي محمد (ص)|رحلة الإسراء من المسجد الحرام إلى الأقصى|—|F|اختلف في تحديد الليلة
+8|1|s|وفاة الشيخ الصدوق|الشيخ الصدوق|صاحب من لا يحضره الفقيه|381 هـ|H|
+8|3|b|ولادة الإمام الحسين (ع)|الإمام الحسين (ع)|ولد بالمدينة|4 هـ|A|
+8|4|b|ولادة العباس بن علي (ع)|أبو الفضل العباس (ع)|ولد بالمدينة|26 هـ|D|
+8|5|b|ولادة الإمام السجاد (ع)|الإمام علي بن الحسين (ع)|ولد بالمدينة|38 هـ|A|قيل 15 جمادى الأولى
+8|11|b|ولادة علي الأكبر (ع)|علي الأكبر (ع)|ولد بالمدينة|33 هـ|D|
+8|15|b|ولادة الإمام المهدي (عج)|الإمام المهدي (عج)|ولد بسامراء|255 هـ|A|
+9|1|e|غرة شهر رمضان|—|بداية شهر الصيام|—|B|
+9|3|s|وفاة الشيخ المفيد|الشيخ المفيد|زعيم الإمامية ببغداد|413 هـ|H|
+9|10|d|وفاة السيدة خديجة الكبرى (ع)|السيدة خديجة (ع)|أم المؤمنين وزوجة النبي (ص)|3 ق.هـ|D|
+9|15|b|ولادة الإمام الحسن (ع)|الإمام الحسن المجتبى (ع)|ولد بالمدينة|3 هـ|A|
+9|17|h|معركة بدر الكبرى|النبي محمد (ص)|أول مواجهة كبرى بين المسلمين وقريش|2 هـ|A|
+9|19|h|ضربة الإمام علي (ع)|الإمام علي (ع)|ضربه ابن ملجم في محراب الكوفة|40 هـ|A|
+9|21|d|استشهاد الإمام علي (ع)|الإمام علي (ع)|استشهد في الكوفة ودفن بالنجف|40 هـ|A|
+9|23|h|ليلة القدر|—|ليلة نزول القرآن، الأرجح 23 رمضان|—|B|ليالي القدر 19 و21 و23
+9|27|s|وفاة العلامة المجلسي|العلامة المجلسي|صاحب بحار الأنوار|1110 هـ|H|
+10|1|e|عيد الفطر المبارك|—|عيد انتهاء شهر رمضان|2 هـ|B|
+10|8|h|هدم قبور البقيع|—|هدم قبور أئمة البقيع|1344 هـ|H|
+10|25|d|استشهاد الإمام الصادق (ع)|الإمام جعفر الصادق (ع)|استشهد بالمدينة مسموماً|148 هـ|A|
+11|1|b|ولادة السيدة المعصومة (ع)|السيدة فاطمة المعصومة (ع)|ولدت بالمدينة|173 هـ|D|
+11|11|b|ولادة الإمام الرضا (ع)|الإمام علي بن موسى الرضا (ع)|ولد بالمدينة|148 هـ|A|قيل 11 ربيع الأول
+11|29|d|استشهاد الإمام الجواد (ع)|الإمام محمد الجواد (ع)|استشهد ببغداد مسموماً|220 هـ|A|قيل 30 ذي القعدة
+12|1|e|زواج الإمام علي والسيدة الزهراء (ع)|الإمام علي (ع) والسيدة الزهراء (ع)|عقد الزواج المبارك|2 هـ|D|
+12|9|h|يوم عرفة واستشهاد مسلم بن عقيل|مسلم بن عقيل (ع)|يوم الدعاء، وشهادة سفير الحسين بالكوفة|60 هـ|D|
+12|10|e|عيد الأضحى المبارك|—|عيد النحر وأول أيام التشريق|—|B|
+12|15|b|ولادة الإمام الهادي (ع)|الإمام علي الهادي (ع)|ولد قرب المدينة|212 هـ|A|قيل 2 أو 5 رجب
+12|18|e|عيد الغدير الأغر|النبي (ص) والإمام علي (ع)|نصب النبي علياً (ع) وصياً بغدير خم|10 هـ|B|
+12|24|h|يوم المباهلة|النبي (ص) وأهل البيت (ع)|مباهلة نصارى نجران|10 هـ|B|`;
+const GH=[[1,1,'رأس السنة الميلادية'],[1,6,'عيد الجيش العراقي'],[3,21,'عيد نوروز'],[5,1,'عيد العمال'],[7,14,'عيد الجمهورية'],[10,3,'اليوم الوطني'],[12,25,'عيد الميلاد المجيد']];
+const BASE=RAW.split('\n').map((l,i)=>{const p=l.split('|');return{id:'b'+i,m:+p[0],d:+p[1],t:p[2],ti:p[3],fg:p[4],su:p[5],yr:p[6],sr:p[7],df:p[8]}}).concat(GH.map((g,i)=>({id:'g'+i,gm:g[0],gd:g[1],t:'g',ti:g[2],fg:'الدولة العراقية',su:'عطلة رسمية في العراق',yr:'',sr:'',df:''})));
+const $=s=>document.querySelector(s);
+let S={};try{S=JSON.parse(localStorage.getItem('hcal'))||{}}catch(e){}
+S=Object.assign({n:{},c:{},off:0,x:[],del:[],ed:{},cd:null,th:''},S);
+let NX=null,AL=null;
+const sv=()=>{try{localStorage.setItem('hcal',JSON.stringify(S))}catch(e){}NX=AL=null;document.body.dataset.t=S.th};
+const col=t=>S.c[t]||TY[t][1];
+const add=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const T=add(new Date(),0);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,0)+'-'+String(d.getDate()).padStart(2,0);
+const F=new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{day:'numeric',month:'numeric',year:'numeric'});
+const HC={};const hij=d=>{const k=iso(d)+'|'+S.off;if(HC[k])return HC[k];const p={};F.formatToParts(add(d,+S.off)).forEach(x=>p[x.type]=+x.value);return HC[k]={y:p.year,m:p.month,d:p.day}};
+const gf=d=>d.toLocaleDateString('ar-EG-u-nu-latn',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const hf=h=>h.d+' '+HN[h.m-1]+' '+h.y+' هـ';
+const all=()=>AL||(AL=[...BASE,...S.x].filter(e=>!S.del.includes(e.id)).map(e=>S.ed[e.id]?{...e,...S.ed[e.id]}:e));
+const evs=d=>{const h=hij(d),n=hij(add(d,1)),a=d.getMonth()+1,b=d.getDate();return all().filter(e=>e.gm?e.gm==a&&e.gd==b:e.m==h.m&&(e.d==h.d||(e.d==30&&h.d==29&&n.d==1)))};
+const srT=s=>[...s].every(c=>SR[c])?[...s].map(c=>SR[c]).join('، '):s;
+function nmap(){if(NX)return NX;NX={};for(let i=0;i<400;i++){const d=add(T,i);evs(d).forEach(e=>{if(!NX[e.id])NX[e.id]=d})}return NX}
+const nxt=id=>{const d=nmap()[id],e=all().find(x=>x.id==id);return d&&e?{e,d,n:Math.round((d-T)/864e5)}:null};
+let V={y:T.getFullYear(),m:null};
+function sheet(h){const s=$('#sh');s.innerHTML='<div onclick="event.stopPropagation()">'+h+'</div>';s.style.display='flex'}
+const cl=()=>$('#sh').style.display='none';
+function card(e){return`<div class=ev style="border-color:${col(e.t)};cursor:default"><b>${e.ti}</b><br><span style="color:${col(e.t)}">${TY[e.t][0]}</span>${e.fg?`<p>👤 ${e.fg}</p>`:''}<p>${e.su}</p>${e.yr?`<p class=mu>السنة: ${e.yr}</p>`:''}${e.sr?`<p class=mu>المصدر: ${srT(e.sr)}</p>`:''}${e.df?`<p class=mu>⚠️ اختلاف الروايات: ${e.df}</p>`:''}<div class=bar><button onclick="cdSet('${e.id}')">⏳ عد تنازلي</button><button onclick="ef('${e.id}')">✏️</button><button onclick="rm('${e.id}')">🗑</button></div></div>`}
+function render(){document.body.dataset.t=S.th;V.m==null?home():mon();scrollTo(0,0)}
+const MA=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],ME=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SEA=[0,0,1,1,1,2,2,2,3,3,3,0],TN=['#6C9BD2','#6FBF8E','#D9A857','#D08A5B'];
+const ICO=['<path d="M12 2v20M4 7l16 10M20 7L4 17M9 4l3 2 3-2M9 20l3-2 3 2"/>','<path d="M12 21v-9M12 12C12 8 9 6 5 6c0 4 3 6 7 6zM12 14c0-3 2-5 6-5 0 3-2 5-6 5z"/>','<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>','<path d="M12 3c5 3 7 8 4 13-1 2-3 4-4 5-1-1-3-3-4-5-3-5-1-10 4-13zM12 8v10"/>'];
+function home(){const n=S.n[iso(T)],c=S.cd&&nxt(S.cd),h=hij(T),cy=V.y==T.getFullYear(),cm=T.getMonth();
+$('#app').innerHTML=`<div style="position:relative;text-align:center;margin-top:14px"><button class=th onclick=set()>🎨</button><p style="letter-spacing:5px;color:var(--ac);font-size:14px">CALENDAR</p><h1>التقويم</h1><p class=se style="font-size:20px">The Twelve Months</p><div class=pill onclick="goto(T)">اليوم: ${gf(T)}<br><small>${hf(h)}</small></div></div>
+${n&&n.r&&n.t?`<div class=ev style="border-color:var(--ac)" onclick="day('${iso(T)}')">🔔 ${n.t}</div>`:''}
+${c?`<div class=ev style="border-color:var(--ac)" onclick="day('${iso(c.d)}')">⏳ ${c.e.ti}: بعد <b>${c.n}</b> يوم<br><small class=mu>${gf(c.d)}</small> <button onclick="event.stopPropagation();cdSet(null)">✕</button></div>`:''}
+<div class=bar style="justify-content:center"><button class=pri onclick="goto(T)">اليوم</button><button onclick=srch()>🔍 بحث</button><button onclick=upc()>القادمة</button><button onclick="hmon(0)">الشهر الهجري</button><button onclick=jmp()>انتقال</button></div>
+<div class=bar style="justify-content:center;align-items:center"><button onclick="V.y--;render()">›</button><b>${V.y}</b><button onclick="V.y++;render()">‹</button></div>
+<div class=grid>${MA.map((a,i)=>{const k=SEA[i],cu=cy&&i==cm;return`<div class="mc${cu?' cur':''}" style="--tn:${TN[k]}" onclick="V.m=${i};render()"><div class=tp><span class=nu style="color:${TN[k]}">${String(i+1).padStart(2,0)}</span><svg class=ic viewBox="0 0 24 24">${ICO[k]}</svg></div><b>${a}</b><span class=iq>${MN[i]}</span><em>${ME[i]}</em>${cu?'<span class=bd>الشهر الحالي</span>':''}</div>`}).join('')}</div>
+<p class=mu style="text-align:center;margin-top:26px;font-size:13px">اضغط على أي شهر لعرض أيامه وأحداثه التاريخية</p>`}
+function mon(){const f=new Date(V.y,V.m,1),n=new Date(V.y,V.m+1,0).getDate(),o=(f.getDay()+1)%7;let c='<div></div>'.repeat(o);
+for(let i=1;i<=n;i++){const d=new Date(V.y,V.m,i),h=hij(d),E=evs(d),k=iso(d);c+=`<div class="d ${k==iso(T)?'t':''}" onclick="day('${k}')">${i}<i>${h.d}</i><div class=dots>${E.slice(0,3).map(e=>`<b style="background:${col(e.t)}"></b>`).join('')}${S.n[k]&&S.n[k].t?'<b style="background:var(--tx)"></b>':''}</div></div>`}
+const a=hij(f),z=hij(new Date(V.y,V.m,n));
+$('#app').innerHTML=`<div class=bar><button onclick="V.m=null;render()">الرئيسية</button><button onclick="nm(-1)">‹</button><button onclick="nm(1)">›</button><button class=pri onclick="goto(T)">اليوم</button></div><h2>${MA[V.m]} · ${MN[V.m]} ${V.y}</h2><p class=se>${ME[V.m]}</p><p class=mu>${HN[a.m-1]} ${a.y} — ${HN[z.m-1]} ${z.y} هـ · اختر يوماً</p><div class=days>${WD.map(w=>`<div class=wd>${w.slice(0,3)}</div>`).join('')}${c}</div>`}
+function nm(n){V.m+=n;if(V.m<0){V.m=11;V.y--}if(V.m>11){V.m=0;V.y++}render()}
+function goto(d,o){V.y=d.getFullYear();V.m=d.getMonth();render();if(o)day(iso(d))}
+function day(k){const d=new Date(k+'T00:00'),h=hij(d),E=evs(d),N=S.n[k]||{};
+sheet(`<h3>${gf(d)}</h3><p style="color:var(--ac)">${hf(h)}</p>${E.map(card).join('')||'<p class=mu>لا توجد مناسبة في هذا اليوم</p>'}<h4>📝 ملاحظة / تذكير</h4><textarea id=nt style="width:100%" oninput="nSave('${k}')">${N.t||''}</textarea><label><input type=checkbox id=nr ${N.r?'checked':''} onchange="nSave('${k}')"> تذكير (يظهر في الرئيسية)</label><h4>📜 في مثل هذا اليوم (ويكيبيديا)</h4><div id=wk class=mu>...</div><p class=mu style="font-size:12px;margin-top:12px">التواريخ وفق المشهور عند الإمامية، وقد تختلف الروايات.</p>`);
+fetch(`https://ar.wikipedia.org/api/rest_v1/feed/onthisday/events/${d.getMonth()+1}/${d.getDate()}`).then(r=>r.json()).then(j=>{$('#wk').innerHTML=j.events.slice(0,6).map(e=>`<p>• <b>${e.year}</b> ${e.text}</p>`).join('')}).catch(()=>{$('#wk').textContent='تعذّر التحميل'})}
+function nSave(k){S.n[k]={t:$('#nt').value,r:$('#nr').checked};if(!S.n[k].t)delete S.n[k];sv()}
+function cdSet(id){S.cd=id;sv();cl();render()}
+function rm(id){if(confirm('حذف هذه المناسبة؟')){S.del.push(id);sv();cl();render()}}
+function ef(id){const e=id?all().find(x=>x.id==id):{m:1,d:1,t:'h',ti:'',fg:'',su:'',yr:'',sr:'',df:''};
+sheet(`<h3>${id?'تعديل':'إضافة'} مناسبة</h3><div class=f><input id=f1 placeholder="اسم المناسبة" value="${e.ti}"><select id=f2>${HN.map((n,i)=>`<option value=${i+1} ${e.m==i+1?'selected':''}>${n}</option>`).join('')}</select><input id=f3 type=number min=1 max=30 value="${e.d}"><select id=f4>${Object.keys(TY).map(k=>`<option value=${k} ${e.t==k?'selected':''}>${TY[k][0]}</option>`).join('')}</select><input id=f5 placeholder="الشخصية" value="${e.fg||''}"><textarea id=f6 placeholder="شرح مختصر">${e.su||''}</textarea><input id=f7 placeholder="السنة" value="${e.yr||''}"><input id=f8 placeholder="المصدر" value="${srT(e.sr||'')}"><input id=f9 placeholder="اختلاف الروايات" value="${e.df||''}"><button class=pri onclick="sf('${id||''}')">حفظ</button></div>`)}
+function sf(id){const o={ti:$('#f1').value,m:+$('#f2').value,d:+$('#f3').value,t:$('#f4').value,fg:$('#f5').value,su:$('#f6').value,yr:$('#f7').value,sr:$('#f8').value,df:$('#f9').value};if(!o.ti)return;if(id)S.ed[id]=o;else S.x.push({id:'c'+Date.now(),...o});sv();cl();render()}
+function srch(){sheet(`<input id=q style="width:100%" placeholder="اسم شخصية/حدث، أو تاريخ مثل 10/1 أو 25/9" oninput="sr(this.value)"><div id=rs></div>`)}
+function sr(q){q=q.trim();let r=[];const m=q.match(/^(\d+)[\/\-](\d+)/);
+if(m){const a=+m[1],b=+m[2];r=[...new Set([...all().filter(e=>e.gm?e.gd==a&&e.gm==b:e.d==a&&e.m==b),...evs(new Date(V.y,b-1,a))])]}else if(q)r=all().filter(e=>(e.ti+e.fg).includes(q));
+$('#rs').innerHTML=r.map(e=>{const d=nmap()[e.id];return`<div class=ev style="border-color:${col(e.t)}" ${d?`onclick="day('${iso(d)}')"`:''}><b>${e.ti}</b><br><small class=mu>${e.gm?e.gd+'/'+e.gm+' ميلادي':e.d+' '+HN[e.m-1]}${d?' · القادمة: '+gf(d):''}</small></div>`}).join('')||'<p class=mu>لا نتائج</p>'}
+function upc(){let r='',c=0;for(let i=0;i<400&&c<25;i++){const d=add(T,i);evs(d).forEach(e=>{c++;r+=`<div class=ev onclick="day('${iso(d)}')" style="border-color:${col(e.t)}"><b>${e.ti}</b><br><small class=mu>${gf(d)} · ${hf(hij(d))} · ${i?'بعد '+i+' يوم':'اليوم'}</small></div>`})}sheet('<h3>المناسبات القادمة</h3>'+r)}
+let HB;
+function hmon(x){HB=x==0?T:add(HB,x>0?30:-1);HB=add(HB,1-hij(HB).d);const m=hij(HB);let r='';
+for(let i=0;i<30;i++){const d=add(HB,i),h=hij(d);if(h.m!=m.m)break;evs(d).forEach(e=>r+=`<div class=ev onclick="day('${iso(d)}')" style="border-color:${col(e.t)}"><small class=mu>${h.d} ${HN[m.m-1]} · ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}</small><br><b>${e.ti}</b></div>`)}
+sheet(`<h3>${HN[m.m-1]} ${m.y} هـ</h3><div class=bar><button onclick="hmon(-1)">‹ السابق</button><button onclick="hmon(1)">التالي ›</button></div>${r||'<p class=mu>لا مناسبات</p>'}`)}
+function jmp(){sheet(`<h3>الانتقال إلى يوم</h3><p>ميلادي</p><input type=date id=jd onchange="goto(new Date(this.value+'T00:00'),1);"><p>هجري</p><div class=bar><input id=jy type=number placeholder="السنة" style="width:90px"><select id=jm>${HN.map((n,i)=>`<option value=${i+1}>${n}</option>`).join('')}</select><input id=jdd type=number placeholder="اليوم" style="width:80px"><button class=pri onclick="jh()">اذهب</button></div>`)}
+function jh(){const y=+$('#jy').value,m=+$('#jm').value,d=+$('#jdd').value,t=hij(T),g=add(T,Math.round((y-t.y)*354.367+(m-t.m)*29.53+(d-t.d)));for(let k=-6;k<=6;k++){const x=add(g,k),h=hij(x);if(h.y==y&&h.m==m&&h.d==d){cl();return goto(x,1)}}alert('تاريخ غير صالح')}
+function set(){sheet(`<h3>الإعدادات</h3><p>الثيم</p><div class=bar>${[['','كحلي'],['green','أخضر'],['plum','بنفسجي'],['light','فاتح']].map(t=>`<button onclick="S.th='${t[0]}';sv();render()">${t[1]}</button>`).join('')}</div><p>ألوان المناسبات</p>${Object.keys(TY).map(k=>`<label>${TY[k][0]} <input type=color value="${col(k)}" onchange="S.c['${k}']=this.value;sv();render()"></label><br>`).join('')}<p>تعديل الهجري (حسب رؤية الهلال)</p><select onchange="S.off=+this.value;sv();render()">${[-1,0,1].map(o=>`<option value=${o} ${S.off==o?'selected':''}>${o>0?'+'+o:o} يوم</option>`).join('')}</select><div class=bar><button class=pri onclick="ef('')">＋ إضافة مناسبة</button></div>`)}
+render();
+</script></body></html>
